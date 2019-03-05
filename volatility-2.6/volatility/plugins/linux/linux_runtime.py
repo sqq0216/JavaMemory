@@ -33,9 +33,8 @@ import volatility.plugins.linux.java.readelf
 import socket
 import time
 import paramiko
-import datetime
-import psutil
 import os
+import datetime
 
 from volatility.plugins.linux.java import readelf
 from volatility.plugins.linux.java.conf import Conf
@@ -106,15 +105,18 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
     def calculate(self):
         linux_common.set_plugin_members(self)
 
-        pidlist = self._config.PID
-        if pidlist:
-            pidlist = [int(p) for p in self._config.PID.split(',')]
+        # pidlist = self._config.PID
+        # if pidlist:
+        #     pidlist = [int(p) for p in self._config.PID.split(',')]
 
         #依次获取进程 直到获取参数指定的进程
+        process_name = "java"
         tasks = []
         for task in self.allprocs():
-            if not pidlist or task.pid in pidlist:
+            # if not pidlist or task.pid in pidlist:
+            if str(task.comm) in process_name:
                 tasks.append(task)
+        tasks.sort()
         return tasks
 
     # 地址内存获取
@@ -142,12 +144,14 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         # local_conf.start()
         print ">>>>>> render_test >>>>>>"
         # start JVM, j_test_path is param represent DLL
-        j_test_path = '-Djava.class.path=/home/kong/java memory/JDI_test.jar'
+        j_test_path = '-Djava.class.path=/home/kong/JavaMemory/JDI/out/artifacts/JDI/JDI.jar'
         jpype.startJVM(jpype.getDefaultJVMPath(), j_test_path)
+        # tasks 表示被监控程序的进程Id（JVM）
         tasks = self.calculate()
-
         if len(tasks) > 0:
-            task = tasks[0]
+            # task = tasks[0]
+            task = tasks[-1]
+            print "task.pid is ", task.pid
         else:
             jpype.shutdownJVM()
             raise Exception("no task or wrong pid")
@@ -158,7 +162,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         self.vtypes = [[1, 1], [2, 2], [3, 3], [4, 4]]
 
         # ssh
-        hostname = '10.108.167.30'
+        hostname = '10.108.164.232'
         port = 22
         username = 'root'
         password = '123456'
@@ -197,6 +201,8 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         for thread in task.threads():
             threadsId.append(long(thread.pid))
 
+        print threadsId
+
         self.libnames = libnames
         self.libbases = libbases
         self.threadsId = threadsId
@@ -204,7 +210,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         self.libs = libs
         self.symbolDict = {}
         # read elf function, symbol represent share lib offset
-        symbol = volatility.plugins.linux.java.readelf.read_sym_offset("/home/kong/java memory/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so")
+        symbol = volatility.plugins.linux.java.readelf.read_sym_offset("/home/kong/JavaMemory/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so")
         self.symbolDict["/home/vm/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so"] = symbol
 
         # java interface for python
@@ -223,10 +229,9 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
 
         # java init
         PyDump.initVM(jp, int(task.pid))
-
+        # self.first_fp = PyDump.initJavaFirstFPAddress("testBusyThread", True)
         self.first_fp = PyDump.initJavaFirstFPAddress("main", True)
         print 'first_fp:', hex(self.first_fp)
-
         # event
         self.event_front_1 = '<xml type="event"'
         self.event_front_2 = '">'
@@ -238,110 +243,61 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
 
         self.client = None
 
-        self.readMemory_time = []
-        self.memoryAnalyze_time = []
-        self.all_time = []
-
-        self.cpuPercent = []
-        self.memPercent = []
         print "===== START =====", os.getpid()
 
-        # d1 = datetime.datetime.now()
-        # sys_info = psutil.virtual_memory()
-        # process_info = psutil.Process(os.getpid())
-
-        count = 0
         # d1wait = datetime.datetime.now()
-        tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        tcpSocket.bind(('', 6666))
-        tcpSocket.listen(5)
-        try:
-            print "waiting for connection..."
-            self.client, addr = tcpSocket.accept()
-            print "...connected from:", addr
-            # self.conf = Conf()
-            # self.conf.config(self.run_command, self.stop_command)
-            # self.conf.start()
-        except Exception, e:
-            print repr(e)
-
-        while True:
+        # tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # tcpSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # tcpSocket.bind(('', 6666))
+        # tcpSocket.listen(5)
+        # try:
+        #     print "waiting for connection..."
+        #     self.client, addr = tcpSocket.accept()
+        #     print "...connected from:", addr
+        #     # self.conf = Conf()
+        #     # self.conf.config(self.run_command, self.stop_command)
+        #     # self.conf.start()
+        # except Exception, e:
+        #     print repr(e)
+        count = 10
+        while count > 0:
+            print "#######################"
             try:
-                # time.sleep(5)
-                # starttime = time.clock()
-                # d2wait = datetime.datetime.now()
-                # delawait = (d2wait - d1wait).seconds
-                # if (delawait > 1):
                 time.sleep(0.1)
+                time_start = time.clock()
                 result = self.getEvent(self.first_fp, self.fnames, self.vnames, self.vtypes, self.client)
-                    # d1wait = d2wait
-                # durningtime = time.clock() - starttime
-                # self.all_time.append(durningtime * 1000)
-                # if result is not None:
-                #     print #result
-                # d2 = datetime.datetime.now()
-                # dela = (d2 - d1).seconds
-                # if (dela > 180):
-                #     print "##########", count
-                #     used = process_info.memory_info().rss
-                #     self.cpuPercent.append(process_info.cpu_percent())
-                #     tmp = "%.3f" % float((used * 1.0 / sys_info.total) * 100)
-                #     self.memPercent.append(tmp)
-                #     d1 = d2
-                #     count += 1
-                #     if (count == 11):
-                #         break
+                time_end = time.clock()
+                print "start, end: ", time_start, ",", time_end
+                print "Durning: ", (time_end - time_start) * 1000, "ms"
+                count -= 1
+
             except Exception, e:
                 print repr(e)
 
-        # print len(self.readMemory_time)
-        # print len(self.memoryAnalyze_time)
-        # print len(self.all_time)
-
-        # input = open("test.txt", "w")
-        # input.write("readMemoryTime: " + str(self.readMemory_time) + "\n")
-        # input.write("memoryAnalyzeTime: " + str(self.memoryAnalyze_time) + "\n")
-        # input.write("AllTime: " + str(self.all_time))
-        # input.close()
-        # output = open("cpumem.txt", "w")
-        # output.write("processName: " + psutil.Process(os.getpid()).name() + "\n")
-        # output.write("processLocal: " + psutil.Process(os.getpid()).cwd() + "\n")
-        # output.write("cpuPercent(%): " + str(self.cpuPercent) + "\n")
-        # output.write("memPercent(%): " + str(self.memPercent) + "\n")
-        # output.close()
-
         PyDump.stop()
         jpype.shutdownJVM()
-        tcpSocket.close()
-    # def run_command(self):
-    #     inf = self.getEvent(self.first_fp, self.fnames, self.vnames, self.vtypes, self.client)
-    #     self.conf.t1_insert(inf + '\n\n')
-    #     print 'run over\n'
-    #
-    # def stop_command(self):
-    #     self.conf.stop()
+            # tcpSocket.close()
+        # def run_command(self):
+        #     inf = self.getEvent(self.first_fp, self.fnames, self.vnames, self.vtypes, self.client)
+        #     self.conf.t1_insert(inf + '\n\n')
+        #     print 'run over\n'
+        #
+        # def stop_command(self):
+        #     self.conf.stop()
 
     def getEvent(self, first_fp, fnames, vnames, vtypes, client):
-        # start_time = time.clock()
-        memory = self.readMemory(first_fp - 7000, 8000)
-        # durning_time = time.clock() - start_time
-        # self.readMemory_time.append((durning_time * 1000))
-        # print "readMemory cost: ", durning_time * 1000, "ms"
+        memory = self.readMemory(first_fp - 5000, 6000)
         self.memory = memory
         frame = Frame(first_fp, memory, self)
         inf = ""
-        start_time = time.clock()
-        count_frame = 0
         while frame is not None:
             methodName = frame.getName()
             if methodName is not None:
-                count_frame += 1
-                # print methodName, "fp:", hex(frame.fp)
-                # if frame.fp in frame.memory[1]:
-                #     print #hex(frame.memory[1][frame.fp])
-                # else:
-                #     print
+                print methodName, "fp:", hex(frame.fp),
+                if frame.fp in frame.memory[1]:
+                    print hex(frame.memory[1][frame.fp])
+                else:
+                    print
             if methodName is not None and methodName in fnames:
                 inf += "->"
                 index = fnames.index(methodName)
@@ -362,10 +318,8 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
                 inf += "->"
                 inf += methodName
             frame = frame.getNextFrame()
-        # durning_time = time.clock() - start_time
-        # self.memoryAnalyze_time.append((durning_time * 1000))
-        # print "memoryAnalyze cost: ", durning_time * 1000, "ms"
-        print "count_frame: ", count_frame
+            if frame is None:
+                print "nextFrame is None"
         return inf
 
     def getThreadsId(self):
@@ -464,16 +418,23 @@ class Frame:
         res = []
         if self.memory[0] is not None and self.fp - 48 in self.memory[0].keys():
             local = self.memory[0][self.fp - 48]
-            # print 'fp - 48:', hex(self.fp - 48), hex(local)
+            tmp_local = local
+            print 'fp - 48:', hex(self.fp - 48), hex(local)
             if not static:
                 local -= 8
             i = 0
+
+            while tmp_local != local - 72:
+                value = self.memory[0][tmp_local]
+                print 'Address: ', hex(tmp_local), ' value: ', hex(value)
+                tmp_local -= 8
+
             while local in self.memory[0].keys() and i < len(types):
                 if types[i] == 4 or types[i] == 2:
                     local -= 8
                 value = self.memory[0][local]
                 v = self.getVal(value, types[i])
-                # print hex(local), v
+                print 'GetParam >> Address: ', hex(local), 'Value: ', v
                 res.append(v)
                 local -= 8
                 i += 1
@@ -488,7 +449,7 @@ class Frame:
             val = long(value)
             return str(val)
         elif vtype == 3:
-            val = self.debugger.PyDump.jf(int(value))
+            val = self.debugger.PyDump.jf(int(hex(value)[-8:], 16))
             return str(val)
         elif vtype == 4:
             val = self.debugger.PyDump.jd(long(value))
@@ -505,6 +466,9 @@ class Frame:
             if len(res) == 0:
                 res = None
         return res
+
+    def getFP(self):
+        return hex(self.fp)
 
     # 得到下一栈帧
     def getNextFrame(self):
