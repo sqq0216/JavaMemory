@@ -58,7 +58,7 @@ class Command(object):
 
     @staticmethod
     def register_options(config):
-        """Registers options into a config object provided"""
+        """Registers options into a vconfig object provided"""
         config.add_option("OUTPUT", default = 'text',
                           cache_invalidator = False,
                           help = "Output in this format (support is module specific, see the Module Output Options below)")

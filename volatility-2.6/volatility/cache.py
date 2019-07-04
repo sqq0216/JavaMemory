@@ -632,6 +632,6 @@ class Testable(object):
     def test(self):
         ## This forces iteration over all keys - this is required in order
         ## to flatten the full list for the cache
-        ## We must ensure config.CACHE is False here, otherwise the change isn't registered in this module
+        ## We must ensure vconfig.CACHE is False here, otherwise the change isn't registered in this module
         config.CACHE = False
         return self._flatten(self.calculate())

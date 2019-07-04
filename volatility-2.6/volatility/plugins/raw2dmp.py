@@ -140,7 +140,7 @@ class Raw2dmp(imagecopy.ImageCopy):
                 len_to_read = min(blocksize, s + l - i)
                 yield i + headerlen, len_to_read, pspace.read(i, len_to_read)
 
-        # Reset the config so volatility opens the crash dump 
+        # Reset the vconfig so volatility opens the crash dump
         config.LOCATION = "file://" + output 
 
         # Crash virtual space 

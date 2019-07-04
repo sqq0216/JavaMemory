@@ -172,7 +172,7 @@ class linux_check_syscall(linux_common.AbstractLinuxCommand):
                 break
 
         if ret == None:
-            debug.error("Unable to find offset for %s" % index_name)
+            debug.error("Unable to find offset for %s" % index_names)
 
         return ret
 

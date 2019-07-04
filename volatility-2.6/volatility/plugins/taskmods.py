@@ -97,7 +97,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
 
-        Returns a reduced list or the full list if config.PIDS not specified.
+        Returns a reduced list or the full list if vconfig.PIDS not specified.
         """
 
         if self._config.PID is not None:
@@ -131,7 +131,7 @@ class DllList(common.AbstractWindowsCommand, cache.Testable):
         flat_addr_space = utils.load_as(addr_space.get_config(), astype = 'physical')
         flateproc = obj.Object("_EPROCESS", offset, flat_addr_space)
         # then use the virtual address of its first thread to get into virtual land
-        # (Note: the addr_space and flat_addr_space use the same config, so should have the same profile)
+        # (Note: the addr_space and flat_addr_space use the same vconfig, so should have the same profile)
         tleoffset = addr_space.profile.get_obj_offset("_ETHREAD", "ThreadListEntry")
 
         # start out with the member offset given to us from the profile 
@@ -278,7 +278,7 @@ class PSList(DllList):
                              str(task.CreateTime or ''),
                              str(task.ExitTime or '')])
 
-# Inherit from files just for the config options (__init__)
+# Inherit from files just for the vconfig options (__init__)
 class MemMap(DllList):
     """Print the memory map"""
 

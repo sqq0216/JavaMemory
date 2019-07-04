@@ -26,7 +26,7 @@ class DotRenderer(Renderer):
         return (outfd, accumulator)
 
     def render(self, outfd, grid):
-        """Renders the TreeGrid in data out to the output file from the config options"""
+        """Renders the TreeGrid in data out to the output file from the vconfig options"""
         self._columns = grid.columns
         self._text_cell_renderers = self._text_cell_renderers_func(self._columns)
 

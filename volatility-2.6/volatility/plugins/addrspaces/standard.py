@@ -40,7 +40,7 @@ def write_callback(option, _opt_str, _value, parser, *_args, **_kwargs):
        by ensuring all future attempts to store the value store_false.
     """
     if not hasattr(parser.values, 'write'):
-        # We don't want to use config.outfile, since this should always be seen by the user
+        # We don't want to use vconfig.outfile, since this should always be seen by the user
         option.dest = "write"
         option.action = "store_false"
         parser.values.write = False
@@ -59,7 +59,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
 
     For this AS to be instantiated, we need
 
-    1) A valid config.LOCATION (starting with file://)
+    1) A valid vconfig.LOCATION (starting with file://)
 
     2) no one else has picked the AS before us
 
@@ -85,7 +85,7 @@ class FileAddressSpace(addrspace.BaseAddressSpace):
         self.fsize = self.fhandle.tell()
         self._long_struct = struct.Struct("=I")
 
-    # Abstract Classes cannot register options, and since this checks config.WRITE in __init__, we define the option here
+    # Abstract Classes cannot register options, and since this checks vconfig.WRITE in __init__, we define the option here
     @staticmethod
     def register_options(config):
         config.add_option("WRITE", short_option = 'w', action = "callback", default = False,

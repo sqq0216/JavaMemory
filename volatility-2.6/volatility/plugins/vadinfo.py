@@ -85,7 +85,7 @@ MI_VAD_TYPE = dict(enumerate([
     'VadLargePageSection',
 ]))
 
-# Inherit from dlllist just for the config options (__init__)
+# Inherit from dlllist just for the vconfig options (__init__)
 class VADInfo(taskmods.DllList):
     """Dump the VAD info"""
 

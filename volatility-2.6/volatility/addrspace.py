@@ -52,7 +52,7 @@ def check_valid_profile(option, _opt_str, value, parser):
     """Checks to make sure the selected profile is valid"""
     # PROFILES may not have been created yet,
     # but the callback should get called once it has
-    # during the final parse of the config options
+    # during the final parse of the vconfig options
     profs = registry.get_plugin_classes(obj.Profile)
     if profs:
         try:
@@ -83,7 +83,7 @@ class BaseAddressSpace(object):
                           help = "A URN location from which to load an address space")
 
     def get_config(self):
-        """Returns the config object used by the vm for use in other vms"""
+        """Returns the vconfig object used by the vm for use in other vms"""
         return self._config
 
     def _set_profile(self, profile_name):
@@ -149,7 +149,7 @@ class BaseAddressSpace(object):
 
     def __getstate__(self):
         """ Serialise this address space efficiently """
-        ## FIXME: Note that types added/overridden in the config.PROFILE may bleed through
+        ## FIXME: Note that types added/overridden in the vconfig.PROFILE may bleed through
         ## into other plugins from the cache.  This needs fixing.
         return dict(name = self.__class__.__name__, base = self.base, config = self._config)
 

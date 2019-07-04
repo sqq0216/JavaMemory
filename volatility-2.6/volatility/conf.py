@@ -49,8 +49,8 @@ system:
 These goals are achieved by the use of multiple sources of
 configuration information:
 
-   - The system wide configuration file is this file: conf.py. It is
-   generated from the build system from conf.py.in by substituting
+   - The system wide configuration file is this file: vconf.py. It is
+   generated from the build system from vconf.py.in by substituting
    autoconfigured variables into it. It contains the most basic
    settings related to the installation, e.g. which python interpreted
    is used, where the python modules are installed etc. In particular
@@ -119,7 +119,7 @@ class ConfObject(object):
     ## evaluating the configuration directives.
     g_dict = dict(__builtins__ = None)
 
-    ## These are the options derived by reading any config files
+    ## These are the options derived by reading any vconfig files
     cnf_opts = {}
 
     ## Command line opts
@@ -244,7 +244,7 @@ class ConfObject(object):
         self.args = args
 
         if final:
-            ## Reparse the config file again:
+            ## Reparse the vconfig file again:
             self.add_file(self._filename)
 
             try:
@@ -270,7 +270,7 @@ class ConfObject(object):
                 cache.CACHE.invalidate_on(k, v)
 
     def remove_option(self, option):
-        """ Removes options both from the config file parser and the
+        """ Removes options both from the vconfig file parser and the
             command line parser
 
             This should only by used on options *before* they have been read,
@@ -309,7 +309,7 @@ class ConfObject(object):
     def add_option(self, option, short_option = None,
                    cache_invalidator = True,
                    **args):
-        """ Adds options both to the config file parser and the
+        """ Adds options both to the vconfig file parser and the
         command line parser.
 
         Args:
@@ -393,7 +393,7 @@ class ConfObject(object):
             pass
 
         ## Is it a ready only parameter (i.e. can not be overridden by
-        ## the config file)
+        ## the vconfig file)
         try:
             return self.readonly[attr.lower()]
         except KeyError:

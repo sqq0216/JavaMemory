@@ -52,7 +52,7 @@ class PluginImporter(object):
        imports all classes found, based on their path and a fixed prefix.
     """
     def __init__(self):
-        """Gathers all the plugins from config.PLUGINS
+        """Gathers all the plugins from vconfig.PLUGINS
            Determines their namespaces and maintains a dictionary of modules to filepaths
            Then imports all modules found
         """

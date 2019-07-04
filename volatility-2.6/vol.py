@@ -58,6 +58,7 @@ import volatility.commands as commands
 import volatility.scan as scan
 import time
 
+
 config.add_option("INFO", default = None, action = "store_true",
                   cache_invalidator = False,
                   help = "Print information about all registered objects")
@@ -142,7 +143,7 @@ def main():
 
     # Setup the debugging format
     debug.setup()
-    # Load up modules in case they set config options
+    # Load up modules in case they set vconfig options
     registry.PluginImporter()
 
     ## Register all register_options for the various classes

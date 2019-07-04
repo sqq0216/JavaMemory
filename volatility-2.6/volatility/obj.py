@@ -778,7 +778,7 @@ class VolatilityMagic(BaseObject):
         except InvalidOffsetError:
             pass
         # If we've been given a configname override,
-        # then override the value with the one from the config
+        # then override the value with the one from the vconfig
         self.configname = configname
         if self.configname:
             configval = getattr(self.obj_vm.get_config(), self.configname)

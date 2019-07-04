@@ -35,9 +35,13 @@ import time
 import paramiko
 import os
 import datetime
+# import subprocess
+
 
 from volatility.plugins.linux.java import readelf
-from volatility.plugins.linux.java.conf import Conf
+# from volatility.plugins.linux.java.conf import Conf
+from varconfig import vconf
+
 
 
 def ssh_cmd(hostname, port, username, password, cmd):
@@ -144,7 +148,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         # local_conf.start()
         print ">>>>>> render_test >>>>>>"
         # start JVM, j_test_path is param represent DLL
-        j_test_path = '-Djava.class.path=/home/kong/JavaMemory/JDI/out/artifacts/JDI/JDI.jar'
+        j_test_path = '-Djava.class.path=/home/sqq/projects/IdeaProjects/JavaMemory/JDI/out/artifacts/JDI/JDI.jar'
         jpype.startJVM(jpype.getDefaultJVMPath(), j_test_path)
         # tasks 表示被监控程序的进程Id（JVM）
         tasks = self.calculate()
@@ -157,20 +161,30 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
             raise Exception("no task or wrong pid")
 
         # configuration
-        self.fnames = ['func1', 'func2', 'func3', 'func4']
-        self.vnames = [['x', 'y'], ['x', 'y'], ['x', 'y'], ['x', 'y']]
-        self.vtypes = [[1, 1], [2, 2], [3, 3], [4, 4]]
+        # self.fnames = ['func1', 'func2', 'func3', 'func4']
+        # self.vnames = [['x', 'y'], ['x', 'y'], ['x', 'y'], ['x', 'y']]
+        # self.vtypes = [[1, 1], [2, 2], [3, 3], [4, 4]]
+        self.fnames = ['main']
+        self.vnames = [['c', 'b', 'a']]
+        self.vtypes = [1, 1, 1, 1]
 
         # ssh
-        hostname = '10.108.164.232'
-        port = 22
-        username = 'root'
-        password = '123456'
+        #hostname = '10.108.167.229'
+        #port = 22
+        #username = 'root'
+        #password = '123456'
+        hostname = vconf.hostname
+        port = vconf.port
+        username = vconf.username
+        password = vconf.password
+
 
         cmd = 'java -jar /home/vm/pyagent.jar ' + str(task.pid)
-        ssh_res = ssh_cmd(hostname=hostname, port=port, username=username, password=password, cmd=cmd)
+        ssh_res = ssh_cmd(hostname = hostname, port=port, username=username, password=password, cmd=cmd)
+        # cmd = 'java -jar /home/sqq/IdeaProjects/JavaMemory/pyagent.jar ' + str(task.pid)
+        # ssh_res = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         if 'yes' not in ssh_res:
-            print ssh_res.decode()
+            print ssh_res
             raise Exception("no task or wrong pid")
         else:
             print 'pyagent.jar return yes'
@@ -201,7 +215,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         for thread in task.threads():
             threadsId.append(long(thread.pid))
 
-        print threadsId
+        print "threadsId:",threadsId
 
         self.libnames = libnames
         self.libbases = libbases
@@ -210,7 +224,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         self.libs = libs
         self.symbolDict = {}
         # read elf function, symbol represent share lib offset
-        symbol = volatility.plugins.linux.java.readelf.read_sym_offset("/home/kong/JavaMemory/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so")
+        symbol = volatility.plugins.linux.java.readelf.read_sym_offset("/home/sqq/projects/IdeaProjects/JavaMemory/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so")
         self.symbolDict["/home/vm/jdk1.7.0_79/jre/lib/amd64/server/libjvm.so"] = symbol
 
         # java interface for python
@@ -227,20 +241,33 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         }
         jp = jpype.JProxy('sun.jvm.hotspot.debugger.linux.PythonMethodInterface', dict = method_dict)
 
+        #thread name list
+
+        # initThread = ['main', 'Finalizer']
+        # print initThread
+        # fps = []
+
+
         # java init
         PyDump.initVM(jp, int(task.pid))
         # self.first_fp = PyDump.initJavaFirstFPAddress("testBusyThread", True)
-        self.first_fp = PyDump.initJavaFirstFPAddress("main", True)
-        print 'first_fp:', hex(self.first_fp)
+        print "start to get first_fp of thread"
+        # for thread in initThread:
+        #     print thread
+        self.first_fp = PyDump.initJavaFirstFPAddress('main', True)
+        print 'first_fp', hex(self.first_fp)
+            # fps.append(self.first_fp)
+            # print 'fps',fps
+
         # event
-        self.event_front_1 = '<xml type="event"'
-        self.event_front_2 = '">'
+        self.event_front_1 = '<xml type="event" name="'
+        self.event_front_2 = '" num="'
+        self.event_front_3 = '" attr="*">'
         self.event_middle_1 = '<'
         self.event_middle_2 = '>'
         self.event_middle_3 = '</'
         self.event_middle_4 = '>'
         self.event_end = '</xml>\r\n\r\n'
-
         self.client = None
 
         print "===== START =====", os.getpid()
@@ -255,17 +282,22 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         #     self.client, addr = tcpSocket.accept()
         #     print "...connected from:", addr
         #     # self.conf = Conf()
-        #     # self.conf.config(self.run_command, self.stop_command)
+        #     # self.conf.vconfig(self.run_command, self.stop_command)
         #     # self.conf.start()
         # except Exception, e:
         #     print repr(e)
+
+        # for fp in fps:
+        #     print fp
         count = 10
         while count > 0:
+        # while True:
             print "#######################"
             try:
-                time.sleep(0.1)
+                time.sleep(3)
                 time_start = time.clock()
                 result = self.getEvent(self.first_fp, self.fnames, self.vnames, self.vtypes, self.client)
+                # print "result_getevent :" + result
                 time_end = time.clock()
                 print "start, end: ", time_start, ",", time_end
                 print "Durning: ", (time_end - time_start) * 1000, "ms"
@@ -276,7 +308,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
 
         PyDump.stop()
         jpype.shutdownJVM()
-            # tcpSocket.close()
+        # tcpSocket.close()
         # def run_command(self):
         #     inf = self.getEvent(self.first_fp, self.fnames, self.vnames, self.vtypes, self.client)
         #     self.conf.t1_insert(inf + '\n\n')
@@ -289,6 +321,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
         memory = self.readMemory(first_fp - 5000, 6000)
         self.memory = memory
         frame = Frame(first_fp, memory, self)
+        # print "frame of getEvent:", frame
         inf = ""
         while frame is not None:
             methodName = frame.getName()
@@ -299,20 +332,27 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
                 else:
                     print
             if methodName is not None and methodName in fnames:
+            #if methodName == "func1":
+                print "methodname:" + methodName
                 inf += "->"
                 index = fnames.index(methodName)
-                variables = frame.getLocals(vtypes[index])
-                result = self.event_front_1 + methodName + self.event_front_2
+                print "index: ", index, "types: ", vtypes
+                variables = frame.getLocals(vtypes)
+                print "variables:", variables
+                # result = self.event_front_1 + methodName + self.event_front_2 + variables[1] + self.event_front_3
                 inf += (methodName + "(")
-                for i, val in enumerate(variables):
-                    result += (self.event_middle_1 + vnames[index][i] + self.event_middle_2)
-                    result += val
-                    result += (self.event_middle_3 + vnames[index][i] + self.event_middle_4)
-                    inf += (val + ',')
-                result += self.event_end
-                # print result
-                if client is not None:
-                    client.sendall(result)
+                result = '<xml type="event" name="'+ methodName + '" num="' + variables[1] + '" attr="*"><c>' + variables[0] + '</c></xml>\r\n\r\n'
+                # for i, val in enumerate(variables):
+                #     result += (self.event_middle_1 + vnames[index][i] + self.event_middle_2)
+                #     result += val
+                #     result += (self.event_middle_3 + vnames[index][i] + self.event_middle_4)
+                #     inf += (val + ',')
+                # result += self.event_end
+                print "result:" + result
+                # if client is not None:
+                #     print "sendresult:" + result
+                    # client.sendall(result)
+                    # time.sleep(1.0)
                 inf += ")"
             elif methodName is not None:
                 inf += "->"
@@ -320,6 +360,7 @@ class linux_runtime(linux_common.AbstractLinuxCommand):
             frame = frame.getNextFrame()
             if frame is None:
                 print "nextFrame is None"
+                print "inf:" + inf
         return inf
 
     def getThreadsId(self):
@@ -418,26 +459,32 @@ class Frame:
         res = []
         if self.memory[0] is not None and self.fp - 48 in self.memory[0].keys():
             local = self.memory[0][self.fp - 48]
-            tmp_local = local
+            tmp_local = local - 16
             print 'fp - 48:', hex(self.fp - 48), hex(local)
             if not static:
                 local -= 8
             i = 0
 
-            while tmp_local != local - 72:
+            while tmp_local != local - 40:
                 value = self.memory[0][tmp_local]
-                print 'Address: ', hex(tmp_local), ' value: ', hex(value)
-                tmp_local -= 8
-
-            while local in self.memory[0].keys() and i < len(types):
-                if types[i] == 4 or types[i] == 2:
-                    local -= 8
-                value = self.memory[0][local]
-                v = self.getVal(value, types[i])
-                print 'GetParam >> Address: ', hex(local), 'Value: ', v
+                v = self.getVal(value, 1)
+                print 'Address: ', hex(tmp_local), ' value: ', hex(value), v
                 res.append(v)
-                local -= 8
-                i += 1
+                tmp_local -= 8
+            # while local in self.memory[0].keys() and i < len(types):
+            #     # if types[i] == 4 or types[i] == 2:
+            #     #     local -= 8
+            #     value = self.memory[0][local]
+            #     v = self.getVal(value, types[i])
+            #     print v
+            #     if isinstance(v,int):
+            #         print 'GetParam >> Address: ', hex(local), 'Value: ', v
+            #         res.append(v)
+            #     else:
+            #         pass
+            #     local -= 8
+            #     i += 1
+        print res
         return res
 
 
@@ -450,6 +497,7 @@ class Frame:
             return str(val)
         elif vtype == 3:
             val = self.debugger.PyDump.jf(int(hex(value)[-8:], 16))
+            #val = self.debugger.PyDump.jd(long(value))
             return str(val)
         elif vtype == 4:
             val = self.debugger.PyDump.jd(long(value))

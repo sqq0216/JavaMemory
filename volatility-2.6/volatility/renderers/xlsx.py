@@ -38,7 +38,7 @@ class XLSXRenderer(Renderer):
         return accumulator
 
     def render(self, outfd, grid):
-        """Renders the TreeGrid in data out to the output file from the config options"""
+        """Renders the TreeGrid in data out to the output file from the vconfig options"""
         if not self._config.OUTPUT_FILE:
             debug.error("Please specify a valid output file using --output-file")
         self._columns = grid.columns

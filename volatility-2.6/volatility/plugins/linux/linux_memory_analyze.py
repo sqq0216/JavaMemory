@@ -220,7 +220,7 @@ class linux_memory_analyze(linux_pslist.linux_pslist):
     read_address_size = 8
     
     def __init__(self, config, *args, **kwargs):
-        #linux_common.AbstractLinuxCommand.__init__(self, config, *args, **kwargs)
+        #linux_common.AbstractLinuxCommand.__init__(self, vconfig, *args, **kwargs)
         linux_pslist.linux_pslist.__init__(self, config, *args, **kwargs)
         linux_common.set_plugin_members(self)
         config.add_option('PID', short_option = 'p', default = None,

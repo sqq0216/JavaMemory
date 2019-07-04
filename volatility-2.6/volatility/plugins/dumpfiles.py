@@ -701,7 +701,7 @@ class DumpFiles(common.AbstractWindowsCommand):
     def filter_tasks(self, tasks):
         """ Reduce the tasks based on the user selectable PIDS parameter.
 
-        Returns a reduced list or the full list if config.PIDS not specified.
+        Returns a reduced list or the full list if vconfig.PIDS not specified.
         """
 
         if self._config.PID is None:

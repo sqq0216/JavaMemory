@@ -50,7 +50,7 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
                 self.as_assert(False, "Profile does not have valid Address Space check")
 
         # Reserved for future use
-        #self.pagefile = config.PAGEFILE
+        #self.pagefile = vconfig.PAGEFILE
         self.name = 'Kernel AS'
 
     def is_user_page(self, entry):
@@ -86,7 +86,7 @@ class AbstractPagedMemory(addrspace.AbstractVirtualAddressSpace):
         raise NotImplementedError
 
     def load_dtb(self):
-        """Loads the DTB as quickly as possible from the config, then the base, then searching for it"""
+        """Loads the DTB as quickly as possible from the vconfig, then the base, then searching for it"""
         try:
             # If the user has manually specified one, then shortcircuit to that one
             if self._config.DTB:
